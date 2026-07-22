@@ -3,7 +3,7 @@
 """
 Module 1: Download & Extract
 ============================
-Tải video đa nền tảng tối ưu cho web, sử dụng Android client để bypass hoàn toàn bot check.
+Tải video đa nền tảng tối ưu cho web, hỗ trợ đọc file cookies.txt để chống bot check.
 """
 
 import os
@@ -102,7 +102,7 @@ class VideoDownloader:
     
     def _download_with_yt_dlp(self, url: str) -> DownloadResult:
         import yt_dlp
-        self.logger.info("⬇️  Đang tải video với Android Client Bypass...")
+        self.logger.info("⬇️  Đang tải video...")
         
         temp_id = f"dl_{os.urandom(4).hex()}"
         output_template = str(self.temp_dir / f"{temp_id}_%(title)s.%(ext)s")
@@ -115,17 +115,25 @@ class VideoDownloader:
             "writethumbnail": False,
             "quiet": True,
             "no_warnings": True,
-            # Buộc dùng android client để né hoàn toàn bot check trên server/IP datacenter
-            "extractor_args": {
-                "youtube": {
-                    "player-client": ["android"]
-                }
-            },
             "postprocessors": [{"key": "FFmpegMetadata", "add_metadata": True}],
         }
         
+        # Tự động nạp file cookies.txt nếu đặt sẵn ở thư mục gốc project để vượt bot check hoàn toàn
+        cookie_path = Path("cookies.txt")
+        if cookie_path.exists():
+            ydl_opts["cookiefile"] = str(cookie_path)
+            self.logger.info("🍪 Đã phát hiện và sử dụng cookies.txt trên server.")
+        else:
+            # Fallback sang client giả lập nếu chưa có file cookies
+            ydl_opts["extractor_args"] = {
+                "youtube": {
+                    "player-client": ["web_safari", "android"]
+                }
+            }
+        
         if is_tiktok_url(url) or is_facebook_url(url):
             ydl_opts["format"] = "best"
+            ydl_opts.pop("cookiefile", None)
             ydl_opts.pop("extractor_args", None)
         
         try:
@@ -170,7 +178,7 @@ class VideoDownloader:
     
     def _download_fallback(self, url: str, temp_id: str) -> DownloadResult:
         import yt_dlp
-        self.logger.warning("🔄 Thử phương án tải dự phòng (Web Embedded Client)...")
+        self.logger.warning("🔄 Thử phương án tải dự phòng...")
         
         output_template = str(self.temp_dir / f"{temp_id}_fb_%(title)s.%(ext)s")
         ydl_opts = {
@@ -180,7 +188,7 @@ class VideoDownloader:
             "no_warnings": True,
             "extractor_args": {
                 "youtube": {
-                    "player-client": ["web_embedded"]
+                    "player-client": ["android"]
                 }
             }
         }
