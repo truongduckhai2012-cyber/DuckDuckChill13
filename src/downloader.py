@@ -3,7 +3,7 @@
 """
 Module 1: Download & Extract
 ============================
-Tải video hoàn toàn độc lập, không dùng cookies, không lệ thuộc trình duyệt.
+Tải video chống chặn bot bằng cách ép client Safari/Mobile Web.
 """
 
 import os
@@ -97,7 +97,7 @@ class VideoDownloader:
     
     def _download_with_yt_dlp(self, url: str) -> DownloadResult:
         import yt_dlp
-        self.logger.info("⬇️  Đang tải video...")
+        self.logger.info("⬇️  Đang tải video với cơ chế Anti-Bot (Safari/MWeb)...")
         
         temp_id = f"dl_{os.urandom(4).hex()}"
         output_template = str(self.temp_dir / f"{temp_id}_%(title)s.%(ext)s")
@@ -110,9 +110,10 @@ class VideoDownloader:
             "writethumbnail": False,
             "quiet": True,
             "no_warnings": True,
+            # Dùng web_safari và mweb để né cơ chế chặn IP data-center của YouTube
             "extractor_args": {
                 "youtube": {
-                    "player-client": ["android", "web"]
+                    "player-client": ["web_safari", "mweb"]
                 }
             },
             "postprocessors": [{"key": "FFmpegMetadata", "add_metadata": True}],
@@ -158,12 +159,12 @@ class VideoDownloader:
                     duration=duration, uploader=uploader, resolution=resolution, success=True
                 )
         except Exception as e:
-            self.logger.error(f"Lỗi yt-dlp: {e}")
+            self.logger.error(f"Lỗi yt-dlp chính: {e}")
             return self._download_fallback(url, temp_id)
     
     def _download_fallback(self, url: str, temp_id: str) -> DownloadResult:
         import yt_dlp
-        self.logger.warning("🔄 Thử phương án tải dự phòng...")
+        self.logger.warning("🔄 Thử phương án tải dự phòng (Android Client)...")
         
         output_template = str(self.temp_dir / f"{temp_id}_fb_%(title)s.%(ext)s")
         ydl_opts = {
@@ -173,7 +174,7 @@ class VideoDownloader:
             "no_warnings": True,
             "extractor_args": {
                 "youtube": {
-                    "player-client": ["ios", "web"]
+                    "player-client": ["android"]
                 }
             }
         }
