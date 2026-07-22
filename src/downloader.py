@@ -3,7 +3,7 @@
 """
 Module 1: Download & Extract
 ============================
-Tải video đa nền tảng tối ưu cho web, tích hợp cơ chế lách bot YouTube (web_safari).
+Tải video đa nền tảng tối ưu cho web, sử dụng Android client để bypass hoàn toàn bot check.
 """
 
 import os
@@ -102,7 +102,7 @@ class VideoDownloader:
     
     def _download_with_yt_dlp(self, url: str) -> DownloadResult:
         import yt_dlp
-        self.logger.info("⬇️  Đang tải video với cơ chế Safari Client Bypass...")
+        self.logger.info("⬇️  Đang tải video với Android Client Bypass...")
         
         temp_id = f"dl_{os.urandom(4).hex()}"
         output_template = str(self.temp_dir / f"{temp_id}_%(title)s.%(ext)s")
@@ -115,10 +115,10 @@ class VideoDownloader:
             "writethumbnail": False,
             "quiet": True,
             "no_warnings": True,
-            # Sử dụng web_safari client để né cơ chế quét bot trên server/IP datacenter
+            # Buộc dùng android client để né hoàn toàn bot check trên server/IP datacenter
             "extractor_args": {
                 "youtube": {
-                    "player-client": ["web_safari", "web"]
+                    "player-client": ["android"]
                 }
             },
             "postprocessors": [{"key": "FFmpegMetadata", "add_metadata": True}],
@@ -126,6 +126,7 @@ class VideoDownloader:
         
         if is_tiktok_url(url) or is_facebook_url(url):
             ydl_opts["format"] = "best"
+            ydl_opts.pop("extractor_args", None)
         
         try:
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -169,7 +170,7 @@ class VideoDownloader:
     
     def _download_fallback(self, url: str, temp_id: str) -> DownloadResult:
         import yt_dlp
-        self.logger.warning("🔄 Thử phương án tải dự phòng (Android Client)...")
+        self.logger.warning("🔄 Thử phương án tải dự phòng (Web Embedded Client)...")
         
         output_template = str(self.temp_dir / f"{temp_id}_fb_%(title)s.%(ext)s")
         ydl_opts = {
@@ -179,7 +180,7 @@ class VideoDownloader:
             "no_warnings": True,
             "extractor_args": {
                 "youtube": {
-                    "player-client": ["android"]
+                    "player-client": ["web_embedded"]
                 }
             }
         }
