@@ -82,6 +82,7 @@ class VideoDownloader:
 
         ydl_opts = {
             'format': f'{self.video_quality}+' + f'{self.audio_quality}/best',
+            'cookiefile': 'cookies.txt',
             'outtmpl': str(self.download_dir / '%(id)s.%(ext)s'),
             'restrictfilenames': True,
             'noplaylist': True,
