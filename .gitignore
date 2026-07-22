@@ -1,0 +1,10 @@
+venv/
+output/
+temp/
+downloads/
+logs/
+.env
+__pycache__/
+*.pyc
+*.pt
+*.bin
