@@ -40,7 +40,7 @@ class VideoDownloader:
         self,
         download_dir: str = "downloads",
         temp_dir: str = "temp",
-        video_quality: str = "bestvideo+bestaudio/best",  # Đã cập nhật format tối ưu chống lỗi unavailable
+        video_quality: str = "bestvideo+bestaudio/best",
         audio_quality: str = "bestaudio/best",
         logger: logging.Logger = None
     ):
@@ -172,7 +172,7 @@ class VideoDownloader:
         temp_id = f"dl_{os.urandom(4).hex()}"
         output_template = str(self.temp_dir / f"{temp_id}_%(title)s.%(ext)s")
         
-        # Cấu hình yt-dlp tối ưu
+        # Cấu hình yt-dlp tối ưu và bypass bot qua cookiesfrombrowser
         ydl_opts = {
             "format": self.video_quality,
             "outtmpl": output_template,
@@ -182,8 +182,7 @@ class VideoDownloader:
             "quiet": True,
             "no_warnings": True,
             "progress_hooks": [self._progress_hook],
-            # Hỗ trợ đọc file cookies.txt nếu có ở thư mục gốc để vượt qua cơ chế chặn bot
-            "cookiefile": "cookies.txt" if os.path.exists("cookies.txt") else None,
+            "cookiesfrombrowser": ("chrome",),  # Tự động lấy cookie từ Chrome để chống chặn bot
             "postprocessors": [{
                 "key": "FFmpegMetadata",
                 "add_metadata": True,
@@ -266,7 +265,6 @@ class VideoDownloader:
                 
         except Exception as e:
             self.logger.error(f"Lỗi yt-dlp: {e}")
-            # Thử tải với format đơn giản hơn
             return self._download_fallback(url, temp_id)
     
     def _download_fallback(self, url: str, temp_id: str) -> DownloadResult:
@@ -282,7 +280,7 @@ class VideoDownloader:
             "outtmpl": output_template,
             "quiet": True,
             "no_warnings": True,
-            "cookiefile": "cookies.txt" if os.path.exists("cookies.txt") else None,
+            "cookiesfrombrowser": ("chrome",),
         }
         
         try:
@@ -347,11 +345,11 @@ class VideoDownloader:
         cmd = [
             "ffmpeg", "-y",
             "-i", video_path,
-            "-vn",  # Không video
-            "-acodec", "pcm_s16le",  # PCM 16-bit little-endian
-            "-ac", "1",  # Mono
-            "-ar", "16000",  # 16kHz (tối ưu cho Whisper)
-            "-af", "loudnorm=I=-16:TP=-1.5:LRA=11",  # Normalize âm lượng
+            "-vn",
+            "-acodec", "pcm_s16le",
+            "-ac", "1",
+            "-ar", "16000",
+            "-af", "loudnorm=I=-16:TP=-1.5:LRA=11",
             audio_path
         ]
         
