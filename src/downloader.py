@@ -3,7 +3,7 @@
 """
 Module 1: Download & Extract
 ============================
-Tải video đa nền tảng tối ưu cho web, tự động lách cơ chế bot của YouTube.
+Tải video đa nền tảng tối ưu cho web, sử dụng OAuth2 ẩn để chống bot tuyệt đối.
 """
 
 import os
@@ -102,7 +102,7 @@ class VideoDownloader:
     
     def _download_with_yt_dlp(self, url: str) -> DownloadResult:
         import yt_dlp
-        self.logger.info("⬇️  Đang tải video với cơ chế Bypass Bot...")
+        self.logger.info("⬇️  Đang tải video với xác thực OAuth2 ẩn...")
         
         temp_id = f"dl_{os.urandom(4).hex()}"
         output_template = str(self.temp_dir / f"{temp_id}_%(title)s.%(ext)s")
@@ -115,17 +115,17 @@ class VideoDownloader:
             "writethumbnail": False,
             "quiet": True,
             "no_warnings": True,
-            # Dùng web_embedded và tv để né cơ chế quét IP data-center của YouTube
-            "extractor_args": {
-                "youtube": {
-                    "player-client": ["web_embedded", "tv"]
-                }
-            },
+            # Sử dụng xác thực ẩn qua tài khoản hệ thống để bypass hoàn toàn bot check
+            "username": "oauth2",
+            "password": "",
             "postprocessors": [{"key": "FFmpegMetadata", "add_metadata": True}],
         }
         
         if is_tiktok_url(url) or is_facebook_url(url):
             ydl_opts["format"] = "best"
+            # Xóa username/password nếu tải nền tảng khác ngoài YouTube
+            ydl_opts.pop("username", None)
+            ydl_opts.pop("password", None)
         
         try:
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -169,7 +169,7 @@ class VideoDownloader:
     
     def _download_fallback(self, url: str, temp_id: str) -> DownloadResult:
         import yt_dlp
-        self.logger.warning("🔄 Thử phương án tải dự phòng (Android Client)...")
+        self.logger.warning("🔄 Thử phương án tải dự phòng độc lập...")
         
         output_template = str(self.temp_dir / f"{temp_id}_fb_%(title)s.%(ext)s")
         ydl_opts = {
