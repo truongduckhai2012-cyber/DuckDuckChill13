@@ -1,9 +1,9 @@
-#!/usr/init/env python3
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
 Module 1: Download & Extract
 ============================
-Tải video từ YouTube, TikTok, Facebook hoặc link trực tiếp hoàn toàn tự động không cần cookies.
+Tải video hoàn toàn độc lập, không dùng cookies, không lệ thuộc trình duyệt.
 """
 
 import os
@@ -19,7 +19,6 @@ from .utils import ensure_dir, get_safe_filename, is_youtube_url, is_tiktok_url,
 
 @dataclass
 class DownloadResult:
-    """Kết quả tải video."""
     video_path: str
     audio_path: str
     title: str
@@ -31,7 +30,6 @@ class DownloadResult:
 
 
 class VideoDownloader:
-    """Trình tải video đa nền tảng sử dụng yt-dlp và FFmpeg."""
     
     def __init__(
         self,
@@ -55,7 +53,7 @@ class VideoDownloader:
             import yt_dlp
             self.yt_dlp_available = True
         except ImportError:
-            raise ImportError("yt-dlp là bắt buộc. Cài đặt: pip install yt-dlp")
+            raise ImportError("yt-dlp là bắt buộc.")
     
     def _check_ffmpeg(self):
         try:
@@ -97,9 +95,14 @@ class VideoDownloader:
             duration=duration, uploader="Local File", resolution="Unknown", success=True
         )
     
-    def _get_base_ydl_opts(self, output_template: str) -> dict:
-        """Cấu hình yt-dlp vượt bot hoàn toàn tự động bằng cách giả lập client."""
-        return {
+    def _download_with_yt_dlp(self, url: str) -> DownloadResult:
+        import yt_dlp
+        self.logger.info("⬇️  Đang tải video...")
+        
+        temp_id = f"dl_{os.urandom(4).hex()}"
+        output_template = str(self.temp_dir / f"{temp_id}_%(title)s.%(ext)s")
+        
+        ydl_opts = {
             "format": self.video_quality,
             "outtmpl": output_template,
             "merge_output_format": "mp4",
@@ -107,7 +110,6 @@ class VideoDownloader:
             "writethumbnail": False,
             "quiet": True,
             "no_warnings": True,
-            # Ép yt-dlp dùng client Android/Web để tránh bị bắt xác thực đăng nhập
             "extractor_args": {
                 "youtube": {
                     "player-client": ["android", "web"]
@@ -115,15 +117,6 @@ class VideoDownloader:
             },
             "postprocessors": [{"key": "FFmpegMetadata", "add_metadata": True}],
         }
-    
-    def _download_with_yt_dlp(self, url: str) -> DownloadResult:
-        import yt_dlp
-        self.logger.info("⬇️  Đang tải video (Clean Mode)...")
-        
-        temp_id = f"dl_{os.urandom(4).hex()}"
-        output_template = str(self.temp_dir / f"{temp_id}_%(title)s.%(ext)s")
-        
-        ydl_opts = self._get_base_ydl_opts(output_template)
         
         if is_tiktok_url(url) or is_facebook_url(url):
             ydl_opts["format"] = "best"
@@ -170,7 +163,7 @@ class VideoDownloader:
     
     def _download_fallback(self, url: str, temp_id: str) -> DownloadResult:
         import yt_dlp
-        self.logger.warning("🔄 Thử phương án tải dự phòng độc lập...")
+        self.logger.warning("🔄 Thử phương án tải dự phòng...")
         
         output_template = str(self.temp_dir / f"{temp_id}_fb_%(title)s.%(ext)s")
         ydl_opts = {
@@ -180,7 +173,7 @@ class VideoDownloader:
             "no_warnings": True,
             "extractor_args": {
                 "youtube": {
-                    "player-client": ["android", "ios"]
+                    "player-client": ["ios", "web"]
                 }
             }
         }
