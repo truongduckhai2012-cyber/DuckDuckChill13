@@ -110,3 +110,11 @@ def cleanup_temp_files(temp_dir: str, keep: bool = False, logger: logging.Logger
             except Exception as e:
                 if logger:
                     logger.warning(f"Không thể xóa {item}: {e}")
+def is_youtube_url(url: str) -> bool:
+    return any(domain in url for domain in ["youtube.com", "youtu.be", "m.youtube.com"])
+
+def is_tiktok_url(url: str) -> bool:
+    return "tiktok.com" in url
+
+def is_facebook_url(url: str) -> bool:
+    return any(domain in url for domain in ["facebook.com", "fb.watch", "fb.com"])                                        
