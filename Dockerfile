@@ -8,15 +8,15 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
-# Nâng cấp pip và cài đặt trực tiếp các thư viện từ requirements.txt
+# Sao chép và cài đặt các thư viện Python
 COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip && pip install --no-cache-dir -r requirements.txt
 
-# Sao chép toàn bộ source code vào container
+# Sao chép toàn bộ mã nguồn vào container
 COPY . .
 
-# Khai báo biến môi trường PORT của Render
+# Khai báo biến môi trường PORT
 ENV PORT=8501
 
-# Lệnh chạy ứng dụng Streamlit
-CMD streamlit run app.py --server.port=${PORT} --server.address=0.0.0.0 --server.headless=true
+# Chạy thông qua python -m để tránh lỗi not found
+CMD python -m streamlit run app.py --server.port=${PORT} --server.address=0.0.0.0 --server.headless=true
